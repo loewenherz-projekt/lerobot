@@ -25,6 +25,7 @@ import numpy as np
 from ultralytics import YOLO
 
 from lerobot.common.cameras.opencv import OpenCVCamera, OpenCVCameraConfig
+import time
 
 
 CONFIG_FILE = Path.home() / ".lerobot" / "stereo_vision.json"
