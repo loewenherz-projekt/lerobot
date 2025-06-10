@@ -180,6 +180,7 @@ wandb login
 |       ├── eval.py                 # load policy and evaluate it on an environment
 |       ├── train.py                # train a policy via imitation learning and/or reinforcement learning
 |       ├── control_robot.py        # teleoperate a real robot, record data, run a policy
+|       ├── manual_control_ui.py    # simple GUI to manually move the SO101 follower
 |       ├── push_dataset_to_hub.py  # convert your dataset into LeRobot dataset format and upload it to the Hugging Face hub
 |       └── visualize_dataset.py    # load a dataset and render its demonstrations
 ├── outputs               # contains results of scripts execution: logs, videos, model checkpoints
@@ -258,6 +259,17 @@ A `LeRobotDataset` is serialised using several widespread file formats for each 
 - metadata are stored in plain json/jsonl files
 
 Dataset can be uploaded/downloaded from the HuggingFace hub seamlessly. To work on a local dataset, you can specify its location with the `root` argument if it's not in the default `~/.cache/huggingface/lerobot` location.
+
+### Manually control the SO101 arm
+
+For quick testing you can open a small Tkinter interface to send joint commands:
+```bash
+python lerobot/scripts/manual_control_ui.py \
+    --port /dev/ttyUSB0 \
+    --id my_awesome_follower_arm
+```
+
+The window lists each servo with its calibrated range and lets you enter goal positions. Press **Move** to command the arm.
 
 ### Evaluate a pretrained policy
 
