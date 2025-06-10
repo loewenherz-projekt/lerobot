@@ -10,10 +10,9 @@ from __future__ import annotations
 
 import argparse
 import tkinter as tk
-from functools import partial
 
-from lerobot.common.robots.so101_follower import SO101Follower, SO101FollowerConfig
 from lerobot.common.motors import MotorNormMode
+from lerobot.common.robots.so101_follower import SO101Follower, SO101FollowerConfig
 
 
 def _norm_from_raw(bus, motor: str, raw: int) -> float:
@@ -50,6 +49,7 @@ def main() -> None:
     root.title("SO101 Manual Control")
 
     entries: dict[str, tk.Entry] = {}
+    pos_labels: dict[str, tk.StringVar] = {}
 
     row = 0
     for motor in robot.bus.motors:
@@ -61,6 +61,10 @@ def main() -> None:
         entry = tk.Entry(root, width=10)
         entry.grid(row=row, column=1, padx=5, pady=5)
         entries[motor] = entry
+        pos_var = tk.StringVar()
+        pos_label = tk.Label(root, textvariable=pos_var)
+        pos_label.grid(row=row, column=2, padx=5, pady=5)
+        pos_labels[motor] = pos_var
         row += 1
 
     def move() -> None:
@@ -76,8 +80,15 @@ def main() -> None:
         if action:
             robot.send_action(action)
 
+    def update_positions() -> None:
+        obs = robot.bus.sync_read("Present_Position")
+        for motor, pos in obs.items():
+            pos_labels[motor].set(f"{pos:.1f}")
+        root.after(100, update_positions)
+
     move_btn = tk.Button(root, text="Move", command=move)
     move_btn.grid(row=row, column=0, columnspan=2, pady=10)
+    update_positions()
 
     def on_close() -> None:
         robot.disconnect()
