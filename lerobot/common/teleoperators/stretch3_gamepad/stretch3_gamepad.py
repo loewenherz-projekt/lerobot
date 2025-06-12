@@ -58,7 +58,6 @@ class Stretch3GamePad(Teleoperator):
     name = "stretch3"
 
     def __init__(self, config: Stretch3GamePadConfig):
-        raise NotImplementedError
         super().__init__(config)
 
         self.config = config
@@ -66,7 +65,7 @@ class Stretch3GamePad(Teleoperator):
 
         self.api = GamePadTeleop(robot_instance=False)
 
-        self.is_connected = False
+        self._is_connected = False
         self.logs = {}
 
         # TODO(aliberts): test this
@@ -85,6 +84,10 @@ class Stretch3GamePad(Teleoperator):
     def feedback_features(self) -> dict:
         return {}
 
+    @property
+    def is_connected(self) -> bool:
+        return self._is_connected
+
     def connect(self) -> None:
         if self.is_connected:
             raise DeviceAlreadyConnectedError(
@@ -94,7 +97,7 @@ class Stretch3GamePad(Teleoperator):
         self.api.startup()
         self.api._update_state()  # Check controller can be read & written
         self.api._update_modes()
-        self.is_connected = True
+        self._is_connected = True
 
     def calibrate(self) -> None:
         pass
@@ -118,4 +121,4 @@ class Stretch3GamePad(Teleoperator):
 
     def disconnect(self) -> None:
         self.api.stop()
-        self.is_connected = False
+        self._is_connected = False

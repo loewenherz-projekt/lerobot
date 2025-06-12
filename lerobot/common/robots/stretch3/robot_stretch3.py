@@ -51,7 +51,6 @@ class Stretch3Robot(Robot):
     name = "stretch3"
 
     def __init__(self, config: Stretch3RobotConfig):
-        raise NotImplementedError
         super().__init__(config)
 
         self.config = config
@@ -60,7 +59,7 @@ class Stretch3Robot(Robot):
         self.api = StretchAPI()
         self.cameras = make_cameras_from_configs(config.cameras)
 
-        self.is_connected = False
+        self._is_connected = False
         self.logs = {}
 
         self.teleop = None  # TODO remove
@@ -71,6 +70,10 @@ class Stretch3Robot(Robot):
 
         self.state_keys = None
         self.action_keys = None
+
+    @property
+    def is_connected(self) -> bool:
+        return self._is_connected
 
     @property
     def observation_features(self) -> dict:
@@ -96,16 +99,16 @@ class Stretch3Robot(Robot):
         return cam_ft
 
     def connect(self) -> None:
-        self.is_connected = self.api.startup()
-        if not self.is_connected:
+        self._is_connected = self.api.startup()
+        if not self._is_connected:
             print("Another process is already using Stretch. Try running 'stretch_free_robot_process.py'")
             raise ConnectionError()
 
         for cam in self.cameras.values():
             cam.connect()
-            self.is_connected = self.is_connected and cam.is_connected
+            self._is_connected = self._is_connected and cam.is_connected
 
-        if not self.is_connected:
+        if not self._is_connected:
             print("Could not connect to the cameras, check that all cameras are plugged-in.")
             raise ConnectionError()
 
@@ -143,7 +146,7 @@ class Stretch3Robot(Robot):
         return obs_dict
 
     def send_action(self, action: np.ndarray) -> np.ndarray:
-        if not self.is_connected:
+        if not self._is_connected:
             raise ConnectionError()
 
         if self.teleop is None:
@@ -181,4 +184,4 @@ class Stretch3Robot(Robot):
         for cam in self.cameras.values():
             cam.disconnect()
 
-        self.is_connected = False
+        self._is_connected = False
