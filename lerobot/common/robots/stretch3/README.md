@@ -109,7 +109,7 @@ python lerobot/scripts/control_robot.py \
     --robot.type=stretch \
     --control.type=teleoperate
 ```
-This is essentially the same as running `stretch_gamepad_teleop.py`
+This is essentially the same as running `lerobot/scripts/stretch_gamepad_teleop.py`
 
 **Record a dataset**
 Once you're familiar with the gamepad controls and after a bit of practice, you can try to record your first dataset with Stretch.
