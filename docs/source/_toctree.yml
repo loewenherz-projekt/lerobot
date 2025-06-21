@@ -9,6 +9,8 @@
     title: Getting Started with Real-World Robots
   - local: cameras
     title: Cameras
+  - local: network_teleoperation
+    title: Network Teleoperation
   title: "Tutorials"
 - sections:
   - local: so101
