@@ -2,7 +2,7 @@
 
 """Run the robot follower as a TCP server."""
 
-from __future__ import annotations
+#from __future__ import annotations
 
 import json
 import logging
