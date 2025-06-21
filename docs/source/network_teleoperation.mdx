@@ -1,0 +1,31 @@
+# Network Teleoperation
+
+This tutorial explains how to operate a follower robot from a different PC using the provided TCP scripts.
+
+## Prerequisites
+- LeRobot installed on both machines
+- Both computers must share the same local network
+
+## Start the follower
+Run the follower server on the robot side:
+
+```bash
+python lerobot/scripts/follower_server.py --robot.type=<follower_type> --robot.port=<port>
+```
+
+By default the server listens on port `5555`. You can change this with `--port`.
+
+## Start the leader
+Launch the leader client on your control PC:
+
+```bash
+python lerobot/scripts/leader_client.py --teleop.type=<leader_type> --teleop.port=<port>
+```
+
+The client scans the network for the follower and connects automatically. Once the connection is established, actions from the leader are forwarded to the follower arm.
+
+## Troubleshooting
+- **Follower not found**: specify the IP range with `--network-range` and ensure that both machines are reachable (use `ping`).
+- **Connection refused**: verify that the follower server is running and that no firewall blocks port `5555` (or your chosen port).
+- **Connection lost**: check the network quality and restart both scripts if necessary.
+- **Handshake errors**: make sure both machines run the same version of LeRobot.
