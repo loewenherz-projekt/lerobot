@@ -482,10 +482,12 @@ leader.disconnect()
 
 ## Teleoperate over the network
 
-Run the follower server on the Raspberry Pi:
+Run the follower server on the Raspberry Pi (replace `/dev/ttyACM0` with the serial
+port of your arm):
 
 ```bash
-python -m lerobot.common.robots.so100_follower.so100_follower_server
+python -m lerobot.common.robots.so100_follower.so100_follower_server \
+  --robot.port=/dev/ttyACM0
 ```
 
 Then on your laptop run teleoperation using the follower client:

@@ -25,6 +25,8 @@ import threading
 import time
 from dataclasses import dataclass
 
+import draccus
+
 import cv2
 import zmq
 
@@ -40,6 +42,12 @@ class SO101FollowerServerConfig:
     connection_time_s: int = 30
     watchdog_timeout_ms: int = 500
     max_loop_freq_hz: int = 30
+
+
+@dataclass
+class SO101FollowerServerCLIConfig:
+    robot: SO101FollowerConfig
+    server: SO101FollowerServerConfig = SO101FollowerServerConfig()
 
 
 class SO101FollowerServer:
@@ -84,17 +92,16 @@ class SO101FollowerServer:
         self.zmq_context.term()
 
 
-def main() -> None:
+@draccus.wrap()
+def main(cfg: SO101FollowerServerCLIConfig) -> None:
     logging.basicConfig(level=logging.INFO)
     logging.info("Configuring SO101 follower")
-    robot_config = SO101FollowerConfig()
-    robot = SO101Follower(robot_config)
+    robot = SO101Follower(cfg.robot)
 
     logging.info("Connecting SO101 follower")
     robot.connect()
 
-    host_config = SO101FollowerServerConfig()
-    host = SO101FollowerServer(host_config)
+    host = SO101FollowerServer(cfg.server)
 
     last_cmd_time = time.time()
     watchdog_active = False
