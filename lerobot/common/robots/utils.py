@@ -13,7 +13,9 @@
 # limitations under the License.
 
 import logging
+import socket
 from pprint import pformat
+from typing import Optional, Tuple
 
 from lerobot.common.robots import RobotConfig
 
@@ -29,6 +31,10 @@ def make_robot_from_config(config: RobotConfig) -> Robot:
         from .so100_follower import SO100Follower
 
         return SO100Follower(config)
+    elif config.type == "so100_follower_client":
+        from .so100_follower import SO100FollowerClient
+
+        return SO100FollowerClient(config)
     elif config.type == "so100_follower_end_effector":
         from .so100_follower import SO100FollowerEndEffector
 
@@ -37,6 +43,10 @@ def make_robot_from_config(config: RobotConfig) -> Robot:
         from .so101_follower import SO101Follower
 
         return SO101Follower(config)
+    elif config.type == "so101_follower_client":
+        from .so101_follower import SO101FollowerClient
+
+        return SO101FollowerClient(config)
     elif config.type == "lekiwi":
         from .lekiwi import LeKiwi
 
@@ -55,6 +65,44 @@ def make_robot_from_config(config: RobotConfig) -> Robot:
         return MockRobot(config)
     else:
         raise ValueError(config.type)
+
+
+def discover_server(
+    *, port: int, timeout_s: float = 1.0, message: bytes = b"LEROBOT_DISCOVERY"
+) -> Optional[Tuple[str, int]]:
+    """Broadcast a UDP packet to discover a running follower server.
+
+    Parameters
+    ----------
+    port: int
+        UDP port used for discovery.
+    timeout_s: float, optional
+        How long to wait for a response in seconds.
+    message: bytes, optional
+        Payload to send in the broadcast.
+
+    Returns
+    -------
+    tuple[str, int] | None
+        The IP address and port advertised by the server if one responded,
+        otherwise ``None``.
+    """
+
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
+    sock.settimeout(timeout_s)
+    try:
+        sock.sendto(message, ("<broadcast>", port))
+        data, addr = sock.recvfrom(1024)
+        try:
+            server_port = int(data.decode())
+        except ValueError:
+            server_port = port
+        return addr[0], server_port
+    except OSError:
+        return None
+    finally:
+        sock.close()
 
 
 def ensure_safe_goal_position(

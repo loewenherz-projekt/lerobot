@@ -39,3 +39,14 @@ class SO101FollowerConfig(RobotConfig):
 
     # Set to `True` for backward compatibility with previous policies/dataset
     use_degrees: bool = False
+
+
+@RobotConfig.register_subclass("so101_follower_client")
+@dataclass
+class SO101FollowerClientConfig(RobotConfig):
+    remote_ip: str | None = None
+    port_zmq_cmd: int = 5555
+    port_zmq_observations: int = 5556
+    cameras: dict[str, CameraConfig] = field(default_factory=dict)
+    polling_timeout_ms: int = 15
+    connect_timeout_s: int = 5

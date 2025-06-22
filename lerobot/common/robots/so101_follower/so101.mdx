@@ -375,6 +375,25 @@ leader.disconnect()
 </hfoption>
 </hfoptions>
 
+## Teleoperate over the network
+
+Run the follower server on the Raspberry Pi:
+
+```bash
+python -m lerobot.common.robots.so101_follower.so101_follower_server
+```
+
+Then on your laptop run teleoperation using the follower client:
+
+```bash
+python -m lerobot.teleoperate \
+  --robot.type=so101_follower_client \
+  --teleop.type=so101_leader
+```
+
+Without a `remote_ip`, the client sends a UDP broadcast to discover the server.
+Ports can be set with `--robot.port_zmq_cmd` and `--robot.port_zmq_observations`.
+
 Congrats 🎉, your robot is all set to learn a task on its own. Start training it by following this tutorial: [Getting started with real-world robots](./getting_started_real_world_robot)
 
 > [!TIP]
