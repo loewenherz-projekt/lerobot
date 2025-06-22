@@ -61,3 +61,14 @@ class SO100FollowerEndEffectorConfig(SO100FollowerConfig):
             "z": 0.02,
         }
     )
+
+
+@RobotConfig.register_subclass("so100_follower_client")
+@dataclass
+class SO100FollowerClientConfig(RobotConfig):
+    remote_ip: str | None = None
+    port_zmq_cmd: int = 5555
+    port_zmq_observations: int = 5556
+    cameras: dict[str, CameraConfig] = field(default_factory=dict)
+    polling_timeout_ms: int = 15
+    connect_timeout_s: int = 5

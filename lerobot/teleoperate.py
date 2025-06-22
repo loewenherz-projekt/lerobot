@@ -47,7 +47,9 @@ from lerobot.common.robots import (  # noqa: F401
     koch_follower,
     make_robot_from_config,
     so100_follower,
+    so100_follower_client,
     so101_follower,
+    so101_follower_client,
 )
 from lerobot.common.teleoperators import (
     Teleoperator,
