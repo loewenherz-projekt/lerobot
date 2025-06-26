@@ -96,6 +96,8 @@ class ViperX(Robot):
 
         self.bus.connect()
         if not self.is_calibrated and calibrate:
+            reason = self.bus.calibration_mismatch_info()
+            logger.info(f"{self} not calibrated: {reason}. Starting calibration.")
             self.calibrate()
 
         for cam in self.cameras.values():
