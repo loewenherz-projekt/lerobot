@@ -719,6 +719,41 @@ class MotorsBus(abc.ABC):
     def _get_half_turn_homings(self, positions: dict[NameOrID, Value]) -> dict[NameOrID, Value]:
         pass
 
+    def calibration_mismatch_info(self) -> str:
+        """Return a human readable summary of why the bus is considered uncalibrated."""
+
+        if not self.calibration:
+            return "no cached calibration"
+
+        try:
+            current = self.read_calibration()
+        except Exception as e:  # pragma: no cover - hardware failure or timeout
+            return f"failed to read calibration: {e}"
+
+        msgs = []
+        expected_set = set(self.calibration)
+        current_set = set(current)
+
+        if expected_set != current_set:
+            missing = sorted(expected_set - current_set)
+            extra = sorted(current_set - expected_set)
+            if missing:
+                msgs.append(f"missing motors {missing}")
+            if extra:
+                msgs.append(f"unexpected motors {extra}")
+
+        for motor in expected_set & current_set:
+            exp = self.calibration[motor]
+            cur = current[motor]
+            if exp.range_min != cur.range_min or exp.range_max != cur.range_max:
+                msgs.append(f"range mismatch for {motor}")
+            if getattr(exp, "homing_offset", 0) != getattr(cur, "homing_offset", 0):
+                msgs.append(f"offset mismatch for {motor}")
+            if getattr(exp, "drive_mode", None) != getattr(cur, "drive_mode", None):
+                msgs.append(f"drive mode mismatch for {motor}")
+
+        return "; ".join(msgs) if msgs else "unknown mismatch"
+
     def record_ranges_of_motion(
         self, motors: NameOrID | list[NameOrID] | None = None, display_values: bool = True
     ) -> tuple[dict[NameOrID, Value], dict[NameOrID, Value]]:
