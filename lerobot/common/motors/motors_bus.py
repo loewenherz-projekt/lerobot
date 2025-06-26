@@ -60,9 +60,9 @@ def assert_same_address(model_ctrl_table: dict[str, dict], motor_models: list[st
     all_addr = []
     all_bytes = []
     for model in motor_models:
-        addr, bytes = get_address(model_ctrl_table, model, data_name)
+        addr, bytes_len = get_address(model_ctrl_table, model, data_name)
         all_addr.append(addr)
-        all_bytes.append(bytes)
+        all_bytes.append(bytes_len)
 
     if len(set(all_addr)) != 1:
         raise NotImplementedError(
@@ -289,8 +289,8 @@ class MotorsBus(abc.ABC):
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(\n"
-            f"    Port: '{self.port}',\n"
-            f"    Motors: \n{pformat(self.motors, indent=8, sort_dicts=False)},\n"
+            f"   Port: '{self.port}',\n"
+            f"   Motors: \n{pformat(self.motors, indent=8, sort_dicts=False)},\n"
             ")',\n"
         )
 
@@ -329,7 +329,7 @@ class MotorsBus(abc.ABC):
         else:
             raise TypeError(f"'{motor}' should be int, str.")
 
-    def _get_motor_model(self, motor: NameOrID) -> int:
+    def _get_motor_model(self, motor: NameOrID) -> str:
         if isinstance(motor, str):
             return self.motors[motor].model
         elif isinstance(motor, int):
@@ -347,7 +347,7 @@ class MotorsBus(abc.ABC):
         else:
             raise TypeError(motors)
 
-    def _get_ids_values_dict(self, values: Value | dict[str, Value] | None) -> list[str]:
+    def _get_ids_values_dict(self, values: Value | dict[str, Value] | None) -> dict[int, Value]:
         if isinstance(values, (int, float)):
             return dict.fromkeys(self.ids, values)
         elif isinstance(values, dict):
@@ -1004,7 +1004,7 @@ class MotorsBus(abc.ABC):
         num_retry: int = 0,
         raise_on_error: bool = True,
         err_msg: str = "",
-    ) -> tuple[int, int]:
+    ) -> tuple[int, int, int]:
         if length == 1:
             read_fn = self.packet_handler.read1ByteTxRx
         elif length == 2:
