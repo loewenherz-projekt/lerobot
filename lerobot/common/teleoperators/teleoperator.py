@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import abc
+import logging
 from pathlib import Path
 from typing import Any, Type
 
@@ -22,6 +23,8 @@ from lerobot.common.constants import HF_LEROBOT_CALIBRATION, TELEOPERATORS
 from lerobot.common.motors.motors_bus import MotorCalibration
 
 from .config import TeleoperatorConfig
+
+logger = logging.getLogger(__name__)
 
 
 class Teleoperator(abc.ABC):
@@ -51,7 +54,13 @@ class Teleoperator(abc.ABC):
         self.calibration_fpath = self.calibration_dir / f"{self.id}.json"
         self.calibration: dict[str, MotorCalibration] = {}
         if self.calibration_fpath.is_file():
-            self._load_calibration()
+            try:
+                self._load_calibration()
+                logger.info(f"Loaded calibration from {self.calibration_fpath}")
+            except Exception as e:  # pragma: no cover - file errors
+                logger.warning(f"Failed to load calibration from {self.calibration_fpath}: {e}")
+        else:
+            logger.info(f"No calibration file found at {self.calibration_fpath}")
 
     def __str__(self) -> str:
         return f"{self.id} {self.__class__.__name__}"
