@@ -231,12 +231,13 @@ class GamepadController(InputController):
         logging.info(f"Initialized gamepad: {self.joystick.get_name()}")
 
         print("Gamepad controls:")
-        print("  Left analog stick: Move in X-Y plane")
-        print("  Right analog stick (vertical): Move in Z axis")
+        print("  Left analog stick: Move base X-Y")
+        print("  Right analog stick: Arm forward/back and left/right")
+        print("  Triggers: Arm up/down")
         print("  B/Circle button: Exit")
         print("  Y/Triangle button: End episode with SUCCESS")
-        print("  A/Cross button: End episode with FAILURE")
-        print("  X/Square button: Rerecord episode")
+        print("  A/Cross button: Open gripper")
+        print("  B button: Close gripper")
 
     def stop(self):
         """Clean up pygame resources."""
@@ -263,23 +264,23 @@ class GamepadController(InputController):
                 elif event.button == 0:
                     self.episode_end_status = "rerecord_episode"
 
-                # RB button (6) for closing gripper
-                elif event.button == 6:
-                    self.close_gripper_command = True
-
-                # LT button (7) for opening gripper
-                elif event.button == 7:
+                # A button (0) opens the gripper
+                elif event.button == 0:
                     self.open_gripper_command = True
+
+                # B button (1) closes the gripper
+                elif event.button == 1:
+                    self.close_gripper_command = True
 
             # Reset episode status on button release
             elif event.type == pygame.JOYBUTTONUP:
-                if event.button in [0, 2, 3]:
+                if event.button in [2, 3]:
                     self.episode_end_status = None
 
-                elif event.button == 6:
+                elif event.button == 1:
                     self.close_gripper_command = False
 
-                elif event.button == 7:
+                elif event.button == 0:
                     self.open_gripper_command = False
 
             # Check for RB button (typically button 5) for intervention flag
@@ -316,6 +317,25 @@ class GamepadController(InputController):
         except pygame.error:
             logging.error("Error reading gamepad. Is it still connected?")
             return 0.0, 0.0, 0.0
+
+    def get_axis_values(self):
+        """Return raw axis values for both sticks and triggers."""
+        import pygame
+
+        try:
+            lx = self.joystick.get_axis(0)
+            ly = self.joystick.get_axis(1)
+            rx = self.joystick.get_axis(2)
+            ry = self.joystick.get_axis(3)
+            lt = self.joystick.get_axis(4)
+            rt = self.joystick.get_axis(5)
+
+            axes = [lx, ly, rx, ry, lt, rt]
+            axes = [0 if abs(v) < self.deadzone else v for v in axes]
+            return tuple(axes)
+        except pygame.error:
+            logging.error("Error reading gamepad axes")
+            return 0.0, 0.0, 0.0, 0.0, 0.0, 0.0
 
 
 class GamepadControllerHID(InputController):
@@ -470,6 +490,17 @@ class GamepadControllerHID(InputController):
         delta_z = -self.right_y * self.z_step_size  # Up/down
 
         return delta_x, delta_y, delta_z
+
+    def get_axis_values(self):
+        """Return raw axis values for both sticks."""
+        return (
+            self.left_x,
+            self.left_y,
+            self.right_x,
+            self.right_y,
+            0.0,
+            0.0,
+        )
 
     def should_quit(self):
         """Return True if quit button was pressed."""
