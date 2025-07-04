@@ -73,7 +73,7 @@ def main(cfg: LeKiwiHostMainConfig):
         # Business logic
         start = time.perf_counter()
         duration = 0
-        while duration < cfg.host.connection_time_s:
+        while duration < cfg.host.connection_time_s or True:
             loop_start_time = time.time()
             try:
                 msg = host.zmq_cmd_socket.recv_string(zmq.NOBLOCK)
