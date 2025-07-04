@@ -23,10 +23,10 @@ from ..config import RobotConfig
 def lekiwi_cameras_config() -> dict[str, CameraConfig]:
     return {
         "front": OpenCVCameraConfig(
-            index_or_path="/dev/video0", fps=30, width=3200, height=1200, rotation=Cv2Rotation.ROTATE_180
+            index_or_path="/dev/video0", fps=30, width=640, height=240, rotation=Cv2Rotation.ROTATE_180
         ),
         "wrist": OpenCVCameraConfig(
-            index_or_path="/dev/video2", fps=30, width=3840, height=1080, rotation=Cv2Rotation.ROTATE_90
+            index_or_path="/dev/video2", fps=30, width=640, height=240, rotation=Cv2Rotation.ROTATE_90
         ),
     }
 
