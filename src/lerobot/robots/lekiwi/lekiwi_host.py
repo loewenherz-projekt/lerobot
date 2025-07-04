@@ -18,8 +18,10 @@ import base64
 import json
 import logging
 import time
+from dataclasses import dataclass, field
 
 import cv2
+import draccus
 import zmq
 
 from .config_lekiwi import LeKiwiConfig, LeKiwiHostConfig
@@ -47,17 +49,22 @@ class LeKiwiHost:
         self.zmq_context.term()
 
 
-def main():
+@dataclass
+class LeKiwiHostMainConfig:
+    robot: LeKiwiConfig = field(default_factory=LeKiwiConfig)
+    host: LeKiwiHostConfig = field(default_factory=LeKiwiHostConfig)
+
+
+@draccus.wrap()
+def main(cfg: LeKiwiHostMainConfig):
     logging.info("Configuring LeKiwi")
-    robot_config = LeKiwiConfig()
-    robot = LeKiwi(robot_config)
+    robot = LeKiwi(cfg.robot)
 
     logging.info("Connecting LeKiwi")
     robot.connect()
 
     logging.info("Starting HostAgent")
-    host_config = LeKiwiHostConfig()
-    host = LeKiwiHost(host_config)
+    host = LeKiwiHost(cfg.host)
 
     last_cmd_time = time.time()
     watchdog_active = False
@@ -66,7 +73,7 @@ def main():
         # Business logic
         start = time.perf_counter()
         duration = 0
-        while duration < host.connection_time_s:
+        while duration < cfg.host.connection_time_s:
             loop_start_time = time.time()
             try:
                 msg = host.zmq_cmd_socket.recv_string(zmq.NOBLOCK)
@@ -81,9 +88,9 @@ def main():
                 logging.error("Message fetching failed: %s", e)
 
             now = time.time()
-            if (now - last_cmd_time > host.watchdog_timeout_ms / 1000) and not watchdog_active:
+            if (now - last_cmd_time > cfg.host.watchdog_timeout_ms / 1000) and not watchdog_active:
                 logging.warning(
-                    f"Command not received for more than {host.watchdog_timeout_ms} milliseconds. Stopping the base."
+                    f"Command not received for more than {cfg.host.watchdog_timeout_ms} milliseconds. Stopping the base."
                 )
                 watchdog_active = True
                 robot.stop_base()
@@ -109,7 +116,7 @@ def main():
             # Ensure a short sleep to avoid overloading the CPU.
             elapsed = time.time() - loop_start_time
 
-            time.sleep(max(1 / host.max_loop_freq_hz - elapsed, 0))
+            time.sleep(max(1 / cfg.host.max_loop_freq_hz - elapsed, 0))
             duration = time.perf_counter() - start
         print("Cycle time reached.")
 

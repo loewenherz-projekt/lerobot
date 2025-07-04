@@ -60,9 +60,9 @@ def assert_same_address(model_ctrl_table: dict[str, dict], motor_models: list[st
     all_addr = []
     all_bytes = []
     for model in motor_models:
-        addr, bytes = get_address(model_ctrl_table, model, data_name)
+        addr, bytes_len = get_address(model_ctrl_table, model, data_name)
         all_addr.append(addr)
-        all_bytes.append(bytes)
+        all_bytes.append(bytes_len)
 
     if len(set(all_addr)) != 1:
         raise NotImplementedError(
@@ -289,8 +289,8 @@ class MotorsBus(abc.ABC):
     def __repr__(self):
         return (
             f"{self.__class__.__name__}(\n"
-            f"    Port: '{self.port}',\n"
-            f"    Motors: \n{pformat(self.motors, indent=8, sort_dicts=False)},\n"
+            f"   Port: '{self.port}',\n"
+            f"   Motors: \n{pformat(self.motors, indent=8, sort_dicts=False)},\n"
             ")',\n"
         )
 
@@ -329,7 +329,7 @@ class MotorsBus(abc.ABC):
         else:
             raise TypeError(f"'{motor}' should be int, str.")
 
-    def _get_motor_model(self, motor: NameOrID) -> int:
+    def _get_motor_model(self, motor: NameOrID) -> str:
         if isinstance(motor, str):
             return self.motors[motor].model
         elif isinstance(motor, int):
@@ -347,7 +347,7 @@ class MotorsBus(abc.ABC):
         else:
             raise TypeError(motors)
 
-    def _get_ids_values_dict(self, values: Value | dict[str, Value] | None) -> list[str]:
+    def _get_ids_values_dict(self, values: Value | dict[str, Value] | None) -> dict[int, Value]:
         if isinstance(values, (int, float)):
             return dict.fromkeys(self.ids, values)
         elif isinstance(values, dict):
@@ -719,6 +719,50 @@ class MotorsBus(abc.ABC):
     def _get_half_turn_homings(self, positions: dict[NameOrID, Value]) -> dict[NameOrID, Value]:
         pass
 
+    def calibration_mismatch_info(self) -> str:
+        """Return a human readable summary of why the bus is considered uncalibrated."""
+
+        if not self.calibration:
+            return "no cached calibration"
+
+        try:
+            current = self.read_calibration()
+        except Exception as e:  # pragma: no cover - hardware failure or timeout
+            return f"failed to read calibration: {e}"
+
+        msgs = []
+        expected_set = set(self.calibration)
+        current_set = set(current)
+
+        if expected_set != current_set:
+            missing = sorted(expected_set - current_set)
+            extra = sorted(current_set - expected_set)
+            if missing:
+                msgs.append(f"missing motors {missing}")
+            if extra:
+                msgs.append(f"unexpected motors {extra}")
+
+        for motor in expected_set & current_set:
+            exp = self.calibration[motor]
+            cur = current[motor]
+            if exp.range_min != cur.range_min or exp.range_max != cur.range_max:
+                msgs.append(
+                    f"{motor} range mismatch (expected {exp.range_min}-{exp.range_max}, "
+                    f"got {cur.range_min}-{cur.range_max})"
+                )
+            if getattr(exp, "homing_offset", 0) != getattr(cur, "homing_offset", 0):
+                msgs.append(
+                    f"{motor} offset mismatch (expected {getattr(exp, 'homing_offset', 0)}, "
+                    f"got {getattr(cur, 'homing_offset', 0)})"
+                )
+            if getattr(exp, "drive_mode", None) != getattr(cur, "drive_mode", None):
+                msgs.append(
+                    f"{motor} drive mode mismatch (expected {getattr(exp, 'drive_mode', None)}, "
+                    f"got {getattr(cur, 'drive_mode', None)})"
+                )
+
+        return "; ".join(msgs) if msgs else "unknown mismatch"
+
     def record_ranges_of_motion(
         self, motors: NameOrID | list[NameOrID] | None = None, display_values: bool = True
     ) -> tuple[dict[NameOrID, Value], dict[NameOrID, Value]]:
@@ -960,7 +1004,7 @@ class MotorsBus(abc.ABC):
         num_retry: int = 0,
         raise_on_error: bool = True,
         err_msg: str = "",
-    ) -> tuple[int, int]:
+    ) -> tuple[int, int, int]:
         if length == 1:
             read_fn = self.packet_handler.read1ByteTxRx
         elif length == 2:
